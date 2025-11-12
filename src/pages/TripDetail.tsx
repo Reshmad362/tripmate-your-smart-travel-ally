@@ -3,13 +3,16 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { ItineraryItemCard } from "@/components/ItineraryItemCard";
 import { CreateItineraryDialog } from "@/components/CreateItineraryDialog";
 import { WeatherCard } from "@/components/WeatherCard";
 import { BudgetTracker } from "@/components/BudgetTracker";
 import { TripMap } from "@/components/TripMap";
-import { ArrowLeft, Plus, Download, Sparkles } from "lucide-react";
+import { TripTimeline } from "@/components/TripTimeline";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { ArrowLeft, Plus, Download, Sparkles, List, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import html2pdf from "html2pdf.js";
 
@@ -42,6 +45,7 @@ const TripDetail = () => {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [generatingAI, setGeneratingAI] = useState(false);
+  const [viewMode, setViewMode] = useState<"list" | "timeline">("list");
 
   useEffect(() => {
     fetchTripData();
@@ -179,16 +183,19 @@ const TripDetail = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="bg-gradient-hero text-white py-8">
+      <div className="bg-gradient-hero text-white py-8 shadow-soft">
         <div className="container mx-auto px-4">
-          <Button
-            variant="ghost"
-            onClick={() => navigate("/dashboard")}
-            className="mb-4 text-white hover:bg-white/20"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Dashboard
-          </Button>
+          <div className="flex items-center justify-between mb-4">
+            <Button
+              variant="ghost"
+              onClick={() => navigate("/dashboard")}
+              className="text-white hover:bg-white/20"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Dashboard
+            </Button>
+            <ThemeToggle />
+          </div>
           <h1 className="text-4xl font-bold mb-2">{trip.title}</h1>
           <p className="text-lg opacity-90">
             {trip.destination} • {tripDays} days
@@ -197,23 +204,34 @@ const TripDetail = () => {
       </div>
 
       <div className="container mx-auto px-4 py-8">
-        <div className="flex flex-wrap gap-4 mb-8">
-          <Button onClick={() => setDialogOpen(true)}>
+        <div className="flex flex-wrap gap-4 mb-8 animate-fade-in">
+          <Button 
+            onClick={() => setDialogOpen(true)}
+            className="bg-primary hover:opacity-90 shadow-soft hover:scale-105 transition-all"
+          >
             <Plus className="w-4 h-4 mr-2" />
             Add Item
           </Button>
-          <Button onClick={generateAIItinerary} disabled={generatingAI}>
+          <Button 
+            onClick={generateAIItinerary} 
+            disabled={generatingAI}
+            className="bg-secondary hover:opacity-90 shadow-soft hover:scale-105 transition-all"
+          >
             <Sparkles className="w-4 h-4 mr-2" />
             {generatingAI ? "Generating..." : "Generate AI Itinerary"}
           </Button>
-          <Button onClick={exportToPDF} variant="outline">
+          <Button 
+            onClick={exportToPDF} 
+            variant="outline"
+            className="hover:scale-105 transition-all"
+          >
             <Download className="w-4 h-4 mr-2" />
             Export PDF
           </Button>
         </div>
 
         <div id="trip-content" className="space-y-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in">
             <BudgetTracker budget={trip.budget} spent={totalSpent} />
             <WeatherCard
               destination={trip.destination}
@@ -222,44 +240,70 @@ const TripDetail = () => {
             />
           </div>
 
-          <TripMap items={items} />
+          <div className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
+            <TripMap items={items} />
+          </div>
 
-          <div>
-            <h2 className="text-2xl font-bold text-foreground mb-4">
-              Itinerary
-            </h2>
+          <div className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-foreground">
+                Itinerary
+              </h2>
+              <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "list" | "timeline")}>
+                <TabsList>
+                  <TabsTrigger value="list" className="flex items-center gap-2">
+                    <List className="w-4 h-4" />
+                    List View
+                  </TabsTrigger>
+                  <TabsTrigger value="timeline" className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4" />
+                    Timeline View
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+            
             {items.length === 0 ? (
-              <Card className="p-8 text-center bg-card border-border">
+              <Card className="p-8 text-center bg-gradient-card border-border shadow-card">
                 <p className="text-muted-foreground mb-4">
                   No itinerary items yet. Add activities or generate an AI
                   itinerary!
                 </p>
               </Card>
             ) : (
-              <div className="space-y-6">
-                {Array.from({ length: tripDays }, (_, i) => i + 1).map(
-                  (day) => (
-                    <Card key={day} className="p-6 bg-card border-border">
-                      <h3 className="text-xl font-bold text-foreground mb-4">
-                        Day {day}
-                      </h3>
-                      <div className="space-y-4">
-                        {itemsByDay[day]?.map((item) => (
-                          <ItineraryItemCard
-                            key={item.id}
-                            item={item}
-                            onDelete={handleDeleteItem}
-                          />
-                        )) || (
-                          <p className="text-muted-foreground text-sm">
-                            No activities planned
-                          </p>
-                        )}
-                      </div>
-                    </Card>
-                  )
+              <TabsContent value={viewMode}>
+                {viewMode === "timeline" ? (
+                  <TripTimeline items={items} />
+                ) : (
+                  <div className="space-y-6">
+                    {Array.from({ length: tripDays }, (_, i) => i + 1).map(
+                      (day) => (
+                        <Card 
+                          key={day} 
+                          className="p-6 bg-gradient-card border-border shadow-card hover:shadow-hover transition-all"
+                        >
+                          <h3 className="text-xl font-bold text-foreground mb-4">
+                            Day {day}
+                          </h3>
+                          <div className="space-y-4">
+                            {itemsByDay[day]?.map((item) => (
+                              <ItineraryItemCard
+                                key={item.id}
+                                item={item}
+                                onDelete={handleDeleteItem}
+                              />
+                            )) || (
+                              <p className="text-muted-foreground text-sm">
+                                No activities planned
+                              </p>
+                            )}
+                          </div>
+                        </Card>
+                      )
+                    )}
+                  </div>
                 )}
-              </div>
+              </TabsContent>
             )}
           </div>
         </div>
