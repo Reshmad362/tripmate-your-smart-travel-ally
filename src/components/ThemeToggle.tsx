@@ -11,18 +11,17 @@ export const ThemeToggle = () => {
     setMounted(true);
   }, []);
 
-  if (!mounted) {
-    return null;
-  }
-
   return (
     <Button
       variant="outline"
       size="icon"
       onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
       className="bg-background/50 backdrop-blur-sm border-border hover:bg-accent transition-all"
+      disabled={!mounted}
     >
-      {theme === "dark" ? (
+      {!mounted ? (
+        <Sun className="h-5 w-5 text-primary opacity-50" />
+      ) : theme === "dark" ? (
         <Sun className="h-5 w-5 text-primary" />
       ) : (
         <Moon className="h-5 w-5 text-primary" />
