@@ -4,12 +4,32 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 
 export const ThemeToggle = () => {
-  const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Don't render anything until mounted to avoid hydration issues
+  if (!mounted) {
+    return (
+      <Button
+        variant="outline"
+        size="icon"
+        disabled
+        className="bg-background/50 backdrop-blur-sm border-border"
+      >
+        <Sun className="h-5 w-5 text-primary opacity-50" />
+        <span className="sr-only">Toggle theme</span>
+      </Button>
+    );
+  }
+
+  return <ThemeToggleButton />;
+};
+
+const ThemeToggleButton = () => {
+  const { theme, setTheme } = useTheme();
 
   return (
     <Button
@@ -17,11 +37,8 @@ export const ThemeToggle = () => {
       size="icon"
       onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
       className="bg-background/50 backdrop-blur-sm border-border hover:bg-accent transition-all"
-      disabled={!mounted}
     >
-      {!mounted ? (
-        <Sun className="h-5 w-5 text-primary opacity-50" />
-      ) : theme === "dark" ? (
+      {theme === "dark" ? (
         <Sun className="h-5 w-5 text-primary" />
       ) : (
         <Moon className="h-5 w-5 text-primary" />
