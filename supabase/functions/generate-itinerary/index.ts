@@ -33,7 +33,11 @@ serve(async (req) => {
               "time": "9:00 AM",
               "activity": "Visit the Eiffel Tower",
               "location": "Champ de Mars, Paris",
-              "description": "Start your day at this iconic landmark. Book tickets in advance to skip the line."
+              "description": "Start your day at this iconic landmark. Book tickets in advance to skip the line.",
+              "estimatedCost": 25,
+              "transportMode": "metro",
+              "transportDistance": 5.2,
+              "carbonFootprint": 0.3
             }
           ]
         }
@@ -41,11 +45,15 @@ serve(async (req) => {
     }
     
     Guidelines:
-    - Create realistic daily schedules with 4-6 activities per day
+    - Create realistic daily schedules with 5-8 activities per day including meals
     - Include specific times, locations, and helpful descriptions
+    - Add estimatedCost in USD for each activity (tickets, meals, shopping, etc.)
+    - Specify transportMode: walking, metro, bus, taxi, train, bike
+    - Add transportDistance in kilometers between activities
+    - Calculate carbonFootprint in kg CO2 (walking/bike: 0, metro/bus: 0.05/km, taxi/car: 0.2/km, train: 0.04/km)
     - Consider travel time between locations
     - Balance popular attractions with hidden gems
-    - Include meals, rest time, and practical tips
+    - Include breakfast, lunch, dinner, and snacks
     - Stay within the specified budget
     - Tailor activities to the user's interests`;
 
