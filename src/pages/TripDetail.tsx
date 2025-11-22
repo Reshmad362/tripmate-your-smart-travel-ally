@@ -12,6 +12,11 @@ import { BudgetTracker } from "@/components/BudgetTracker";
 import { Navigation } from "@/components/Navigation";
 import { SmartInsights } from "@/components/SmartInsights";
 import { TripPlannerEnhanced } from "@/components/TripPlannerEnhanced";
+import { TripMap } from "@/components/TripMap";
+import { CarbonFootprintCard } from "@/components/CarbonFootprintCard";
+import { PackingChecklist } from "@/components/PackingChecklist";
+import { SafetyTips } from "@/components/SafetyTips";
+import { LocalTransport } from "@/components/LocalTransport";
 import { ArrowLeft, Plus, Download, Sparkles, List, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import html2pdf from "html2pdf.js";
@@ -36,6 +41,9 @@ interface ItineraryItem {
   location: string;
   description: string;
   cost: number;
+  carbon_footprint?: number;
+  transport_mode?: string;
+  transport_distance?: number;
 }
 
 const TripDetail = () => {
@@ -134,11 +142,16 @@ const TripDetail = () => {
           trip_id: trip.id,
           day_number: day.day,
           title: item.activity,
-          type: "activity",
+          type: item.activity.toLowerCase().includes("lunch") || 
+                item.activity.toLowerCase().includes("dinner") || 
+                item.activity.toLowerCase().includes("breakfast") ? "meal" : "activity",
           time: item.time || "09:00",
           location: item.location || trip.destination,
           description: item.description || "",
-          cost: 0,
+          cost: item.estimatedCost || 0,
+          carbon_footprint: item.carbonFootprint || 0,
+          transport_mode: item.transportMode || "walking",
+          transport_distance: item.transportDistance || 0,
         }))
       );
 
@@ -190,6 +203,7 @@ const TripDetail = () => {
   }, {} as Record<number, ItineraryItem[]>);
 
   const totalSpent = items.reduce((sum, item) => sum + (item.cost || 0), 0);
+  const totalCarbon = items.reduce((sum, item) => sum + (item.carbon_footprint || 0), 0);
 
   return (
     <div className="min-h-screen"
@@ -244,17 +258,25 @@ const TripDetail = () => {
         </div>
 
         <div id="trip-content" className="space-y-8">
-          <div className="animate-fade-in">
-            <TripPlannerEnhanced
-              destination={trip.destination}
-              startDate={trip.start_date}
-              endDate={trip.end_date}
-              budget={trip.budget}
-            />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-in">
+            <div className="lg:col-span-3">
+              <TripPlannerEnhanced
+                destination={trip.destination}
+                startDate={trip.start_date}
+                endDate={trip.end_date}
+                budget={trip.budget}
+              />
+            </div>
           </div>
 
-          <div className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in" style={{ animationDelay: '0.1s' }}>
             <BudgetTracker budget={trip.budget ?? 0} spent={totalSpent} />
+            <CarbonFootprintCard totalCarbonKg={totalCarbon} />
+            <PackingChecklist 
+              destination={trip.destination} 
+              duration={tripDays}
+              weather={items.length > 0 ? "Check forecast above" : undefined}
+            />
           </div>
 
           <div className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
@@ -263,6 +285,17 @@ const TripDetail = () => {
               startDate={trip.start_date}
               interests={trip.interests}
             />
+          </div>
+
+          {items.length > 0 && (
+          <div className="animate-fade-in" style={{ animationDelay: '0.5s' }}>
+              <TripMap items={items} destination={trip.destination} />
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in" style={{ animationDelay: '0.4s' }}>
+            <SafetyTips destination={trip.destination} />
+            <LocalTransport destination={trip.destination} />
           </div>
 
           <div className="animate-fade-in" style={{ animationDelay: '0.3s' }}>
